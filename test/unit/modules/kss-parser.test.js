@@ -1,8 +1,8 @@
 var requireModule = require('requirefrom')('lib/modules'),
-    chai = require('chai'),
-    expect = chai.expect,
+    chai      = require('chai'),
+    expect    = chai.expect,
     multiline = require('multiline'),
-    parser  = requireModule('kss-parser');
+    parser    = requireModule('kss-parser');
 
 describe('KSS parser', function() {
 
@@ -19,22 +19,31 @@ describe('KSS parser', function() {
     };
   }
 
+  function expectStringOrder(expected) {
+    return function(sections) {
+      var order = sections.map(function(section) {
+        return section.stringReference;
+      });
+      expect(order).to.eql(expected);
+    };
+  }
+
   it('does not crash on empty .less file', function(done) {
-    var files = { 'file1.less': '' };
+    var files = {'file1.less': ''};
     parse(files).then(function(sections) {
       expect(sections.length).to.eql(0);
     }).then(done).catch(done);
   });
 
   it('does not crash on empty .sass file', function(done) {
-    var files = { 'file1.sass': '' };
+    var files = {'file1.sass': ''};
     parse(files).then(function(sections) {
       expect(sections.length).to.eql(0);
     }).then(done).catch(done);
   });
 
   it('does not crash on empty .scss file', function(done) {
-    var files = { 'file1.scss': '' };
+    var files = {'file1.scss': ''};
     parse(files).then(function(sections) {
       expect(sections.length).to.eql(0);
     }).then(done).catch(done);
@@ -44,22 +53,22 @@ describe('KSS parser', function() {
     var files = {
       'file1.less': multiline(function() {
         /*
-        // Styleguide 1.0
-        */
+         // Styleguide 1.0
+         */
       }),
       'file2.scss': multiline(function() {
         /*
-        // Styleguide 2.0
+         // Styleguide 2.0
 
-        // Styleguide 2.1
+         // Styleguide 2.1
 
-        // Styleguide 2.2
-        */
+         // Styleguide 2.2
+         */
       }),
       'file3.scss': multiline(function() {
         /*
-        // Styleguide 3.0
-        */
+         // Styleguide 3.0
+         */
       })
     };
     parse(files).then(function(sections) {
@@ -71,10 +80,10 @@ describe('KSS parser', function() {
     var files = {
       'file.less': multiline(function() {
         /*
-        // This should be __strong__.
-        //
-        // Styleguide 1.0
-        */
+         // This should be __strong__.
+         //
+         // Styleguide 1.0
+         */
       })
     };
     parse(files).then(function(sections) {
@@ -86,10 +95,10 @@ describe('KSS parser', function() {
     var files = {
       'file.less': multiline(function() {
         /*
-        // This should be <strong>strong</strong>.
-        //
-        // Styleguide 1.0
-        */
+         // This should be <strong>strong</strong>.
+         //
+         // Styleguide 1.0
+         */
       })
     };
     parse(files).then(function(sections) {
@@ -101,14 +110,14 @@ describe('KSS parser', function() {
     var files = {
       'file.less': multiline(function() {
         /*
-        // Header
-        //
-        // First paragraph
-        //
-        // Second paragraph
-        //
-        // Styleguide 1.0
-        */
+         // Header
+         //
+         // First paragraph
+         //
+         // Second paragraph
+         //
+         // Styleguide 1.0
+         */
       })
     };
     parse(files).then(function(sections) {
@@ -120,12 +129,12 @@ describe('KSS parser', function() {
     var files = {
       'file.less': multiline(function() {
         /*
-        // Header
-        //
-        // This should be __strong__.
-        //
-        // Styleguide 1.0
-        */
+         // Header
+         //
+         // This should be __strong__.
+         //
+         // Styleguide 1.0
+         */
       })
     };
     parse(files).then(function(sections) {
@@ -137,12 +146,12 @@ describe('KSS parser', function() {
     var files = {
       'file.less': multiline(function() {
         /*
-        // Header
-        //
-        // This should be <strong>strong</strong>.
-        //
-        // Styleguide 1.0
-        */
+         // Header
+         //
+         // This should be <strong>strong</strong>.
+         //
+         // Styleguide 1.0
+         */
       })
     };
     parse(files).then(function(sections) {
@@ -150,133 +159,282 @@ describe('KSS parser', function() {
     }).then(done).catch(done);
   });
 
-  it('sorts sections numerically according to first level', function(done) {
-    var file = {'file1.less': multiline(function() {
-      /*
-      // Styleguide 10
+  describe('numeric reference', function() {
+    it('sorts sections numerically according to first level', function(done) {
+      var file  = {
+            'file1.less': multiline(function() {
+              /*
+               // Styleguide 10
 
-      // Styleguide 2
+               // Styleguide 2
 
-      // Styleguide 1
-      */
-    })},
-    order = ['1', '2', '10'];
-    parse(file).then(expectOrder(order)).then(done).catch(done);
+               // Styleguide 1
+               */
+            })
+          },
+          order = ['1', '2', '10'];
+      parse(file).then(expectOrder(order)).then(done).catch(done);
+    });
+
+    it('sorts sub-sections numerically according to second level', function(done) {
+      var file  = {
+            'file2.less': multiline(function() {
+              /*
+               // Styleguide 2.10
+
+               // Styleguide 3
+
+               // Styleguide 2.2
+
+               // Styleguide 2.1
+               */
+            })
+          },
+          order = ['2.1', '2.2', '2.10', '3'];
+      parse(file).then(expectOrder(order)).then(done).catch(done);
+    });
+
+    it('sorts sub-sub-sections numerically according to third level', function(done) {
+      var file  = {
+            'file3.less': multiline(function() {
+              /*
+               // Styleguide 3.1.10
+
+               // Styleguide 3.2
+
+               // Styleguide 4
+
+               // Styleguide 3.1.2
+
+               // Styleguide 3.1.1
+               */
+            })
+          },
+          order = ['3.1.1', '3.1.2', '3.1.10', '3.2', '4'];
+      parse(file).then(expectOrder(order)).then(done).catch(done);
+    });
+
+    it('sorts arbitrarily deep sub-sections correctly', function(done) {
+      var file  = {
+            'file4.less': multiline(function() {
+              /*
+               // Styleguide 1.2.3.4.10
+
+               // Styleguide 1.2.3.4.5.6.7
+
+               // Styleguide 1.2.4.19
+
+               // Styleguide 1.2.4.2
+               */
+            })
+          },
+          order = ['1.2.3.4.5.6.7', '1.2.3.4.10', '1.2.4.2', '1.2.4.19'];
+      parse(file).then(expectOrder(order)).then(done).catch(done);
+    });
+
+    it('parses section reference 1.0 as 1', function(done) {
+      var file = {
+        'file1.less': multiline(function() {
+          /*
+           // Styleguide 2.0
+
+           // Styleguide 1.0
+           */
+        })
+      };
+      parse(file).then(expectOrder(['1', '2'])).then(done).catch(done);
+    });
+
+    it('ignores trailing dot when parsing section reference', function(done) {
+      var file = {
+        'file1.less': multiline(function() {
+          /*
+           // Styleguide 1.2.
+           */
+        })
+      };
+      parse(file).then(expectOrder(['1.2'])).then(done).catch(done);
+    });
+
+    it('rejects with error if two sections are defined with same reference number', function(done) {
+      var file = {
+        'file1.less': multiline(function() {
+          /*
+           // Foo
+           //
+           // Styleguide 1.1
+
+           // Bar
+           //
+           // Styleguide 1.1
+           */
+        })
+      };
+      parse(file).done(function() {
+        done(Error('expected promise to reject'));
+      }, function(err) {
+        expect(err.message).to.eql('Two sections defined with same reference 1.1: "Foo" and "Bar"');
+        done();
+      });
+    });
   });
 
-  it('sorts sub-sections numerically according to second level', function(done) {
-    var file = {'file2.less': multiline(function() {
-      /*
-      // Styleguide 2.10
+  describe('string reference', function() {
+    it('sorts sections alphabetically according to first level', function(done) {
+      var file  = {
+            'file1.less': multiline(function() {
+              /*
+               // Styleguide Juliet
 
-      // Styleguide 3
+               // Styleguide Bravo
 
-      // Styleguide 2.2
+               // Styleguide Foxtrot
 
-      // Styleguide 2.1
-      */
-    })},
-    order = ['2.1', '2.2', '2.10', '3'];
-    parse(file).then(expectOrder(order)).then(done).catch(done);
-  });
+               // Styleguide Alpha
+               */
+            })
+          },
+          order = ['Alpha',
+                   'Bravo',
+                   'Foxtrot',
+                   'Juliet'];
+      parse(file).then(expectStringOrder(order)).then(done).catch(done);
+    });
 
-  it('sorts sub-sub-sections numerically according to third level', function(done) {
-    var file = {'file3.less': multiline(function() {
-      /*
-        // Styleguide 3.1.10
+    it('sorts sub-sections alphabetically according to second level', function(done) {
+      var file  = {
+            'file2.less': multiline(function() {
+              /*
+               // Styleguide Bravo.juliet
 
-        // Styleguide 3.2
+               // Styleguide Charlie
 
-        // Styleguide 4
+               // Styleguide Bravo.bravo
 
-        // Styleguide 3.1.2
+               // Styleguide Bravo.alpha
+               */
+            })
+          },
+          order = ['Bravo.alpha',
+                   'Bravo.bravo',
+                   'Bravo.juliet',
+                   'Charlie'];
+      parse(file).then(expectStringOrder(order)).then(done).catch(done);
+    });
 
-        // Styleguide 3.1.1
-      */
-    })},
-    order = ['3.1.1', '3.1.2', '3.1.10', '3.2', '4'];
-    parse(file).then(expectOrder(order)).then(done).catch(done);
-  });
+    it('sorts sub-sub-sections alphabetically according to third level', function(done) {
+      var file  = {
+            'file3.less': multiline(function() {
+              /*
+               // Styleguide Charlie.alpha.juliet
 
-  it('sorts arbitrarily deep sub-sections correctly', function(done) {
-    var file = {'file4.less': multiline(function() {
-      /*
-         // Styleguide 1.2.3.4.10
+               // Styleguide Charlie.bravo
 
-         // Styleguide 1.2.3.4.5.6.7
+               // Styleguide Delta
 
-         // Styleguide 1.2.4.19
+               // Styleguide Charlie.alpha.bravo
 
-         // Styleguide 1.2.4.2
-      */
-    })},
-    order = ['1.2.3.4.5.6.7', '1.2.3.4.10', '1.2.4.2', '1.2.4.19'];
-    parse(file).then(expectOrder(order)).then(done).catch(done);
-  });
+               // Styleguide Charlie.alpha.alpha
+               */
+            })
+          },
+          order = ['Charlie.alpha.alpha',
+                   'Charlie.alpha.bravo',
+                   'Charlie.alpha.juliet',
+                   'Charlie.bravo',
+                   'Delta'];
+      parse(file).then(expectStringOrder(order)).then(done).catch(done);
+    });
 
-  it('parses section reference 1.0 as 1', function(done) {
-    var file = {
-      'file1.less': multiline(function() {
-        /*
-        // Styleguide 2.0
+    it('sorts arbitrarily deep sub-sections correctly', function(done) {
+      var file  = {
+            'file4.less': multiline(function() {
+              /*
+               // Styleguide Alpha.bravo.charlie.delta.juliet
 
-        // Styleguide 1.0
-        */
-      })
-    };
-    parse(file).then(expectOrder(['1', '2'])).then(done).catch(done);
+               // Styleguide Alpha.bravo.charlie.delta.echo.foxtrot.golf
+
+               // Styleguide Alpha.bravo.delta.sierra
+
+               // Styleguide Alpha.bravo.delta.bravo
+               */
+            })
+          },
+          order = ['Alpha.bravo.charlie.delta.echo.foxtrot.golf',
+                   'Alpha.bravo.charlie.delta.juliet',
+                   'Alpha.bravo.delta.bravo',
+                   'Alpha.bravo.delta.sierra'];
+      parse(file).then(expectStringOrder(order)).then(done).catch(done);
+    });
+
+    it('parses section reference string.0 as string', function(done) {
+      var file  = {
+            'file1.less': multiline(function() {
+              /*
+               // Styleguide Bravo.0
+
+               // Styleguide Alpha.0
+               */
+            })
+          },
+          order = ['Alpha',
+                   'Bravo'];
+      parse(file).then(expectStringOrder(order)).then(done).catch(done);
+    });
+
+    it('ignores trailing dot when parsing section reference', function(done) {
+      var file  = {
+            'file1.less': multiline(function() {
+              /*
+               // Styleguide Alpha.bravo.
+               */
+            })
+          },
+          order = ['Alpha.bravo'];
+      parse(file).then(expectStringOrder(order)).then(done).catch(done);
+    });
+
+    // TODO:1 define behavior for duplicate string references
+    it.skip('rejects with error if two sections are defined with same reference number', function(done) {
+      var file = {
+        'file1.less': multiline(function() {
+          /*
+           // Foo
+           //
+           // Styleguide Alpha.alpha
+
+           // Bar
+           //
+           // Styleguide Alpha.alpha
+           */
+        })
+      };
+      parse(file).done(function() {
+        done(Error('expected promise to reject'));
+      }, function(err) {
+        expect(err.message).to.eql('Two sections defined with same number 1.1: "Foo" and "Bar"');
+        done();
+      });
+    });
   });
 
   it('should store correct syntax', function(done) {
     var files = {
       'file1.less': multiline(function() {
         /*
-        // Styleguide 1.0
-        */
+         // Styleguide 1.0
+         */
       }),
       'file2.scss': multiline(function() {
         /*
-        // Styleguide 2.0
-        */
+         // Styleguide 2.0
+         */
       })
     };
     parse(files).then(function(sections) {
       expect(sections[0].syntax).to.eql('less');
       expect(sections[1].syntax).to.eql('scss');
     }).then(done).catch(done);
-  });
-
-  it('ignores trailing dot when parsing section reference', function(done) {
-    var file = {
-      'file1.less': multiline(function() {
-        /*
-        // Styleguide 1.2.
-        */
-      })
-    };
-    parse(file).then(expectOrder(['1.2'])).then(done).catch(done);
-  });
-
-  it('rejects with error if two sections are defined with same reference number', function(done) {
-    var file = {
-      'file1.less': multiline(function() {
-        /*
-        // Foo
-        //
-        // Styleguide 1.1
-
-        // Bar
-        //
-        // Styleguide 1.1
-        */
-      })
-    };
-    parse(file).done(function() {
-      done(Error('expected promise to reject'));
-    }, function(err) {
-      expect(err.message).to.eql('Two sections defined with same number 1.1: "Foo" and "Bar"');
-      done();
-    });
   });
 
 });
